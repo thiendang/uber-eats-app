@@ -35,6 +35,29 @@
 
 ### Create the Login route handler
 
+- Create a route hanlder for the `login` endpoint
+ 
+ - We want the user to send the request body just like they would when sending it to our `serverBE` -> Therefore, when calling the `route hanlder`, it should behave the same way
+ 
+ - After receiving the `accessToken` and `refreshToken` from `serverBE` returned to `nextServer`, we proceed to `decode` them
+ 
+   - The purpose of decoding is to extract the expiration time of the `accessToken`
+ 
+   - Once we’ve extracted the expiration time, we will then set the cookies -> Because cookies require a defined expiration time; they can’t exist indefinitely
+ 
+ - After retrieving the expiration time of both the `accessToken` and `refreshToken`, we’ll set cookies for `client.com`
+ 
+   - The syntax for setting cookies in Next.js is: `cookies.set(name, value, options())`
+ 
+     - The `options` object includes `expires: timestamp`
+ 
+   - We should set `httpOnly` to prevent the client from accessing the cookie, which helps protect against XSS attacks and malicious scripts
+ 
+   - When the client sends a request to the server, the cookie will be automatically included in the request
+ 
+   - Note: The `expires` value in `cookies-next` should be in milliseconds (`ms`)
+ 
+
 ### Setup Tanstack Query and implement login logic
 
 ### Implement logout logic
