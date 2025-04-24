@@ -76,3 +76,5 @@ export const GuestCreateOrdersRes = z.object({
 export type GuestCreateOrdersResType = z.TypeOf<typeof GuestCreateOrdersRes>
 
 export const GuestGetOrdersRes = z.object({})
+
+export type GuestGetOrdersResType = z.TypeOf<typeof GuestGetOrdersRes>
