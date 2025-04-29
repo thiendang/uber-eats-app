@@ -1,40 +1,42 @@
 import http from '@/lib/http'
-import { LoginBodyType, LoginResType } from '@/schemaValidations/auth.schema'
+import { LoginBodyType, LoginResType, LogoutBodyType } from '@/schemaValidations/auth.schema'
 import { MessageResType } from '@/schemaValidations/common.schema'
 
 const authApiRequest = {
-  // login: (body: LoginBodyType) => http.post<LoginResType>('/auth/login', body),
   sLogin: (body: LoginBodyType) => http.post<LoginResType>('/auth/login', body),
+
   login: (body: LoginBodyType) =>
     http.post<LoginResType>('/api/auth/login', body, {
       baseUrl: ''
     }),
-  auth: (body: { sessionToken: string; expiresAt: string }) =>
-    http.post('/api/auth', body, {
-      baseUrl: ''
-    }),
 
-  // API logout call from 'next-server' to 'serverBE'
-  logoutFromNextServerToServer: (sessionToken: string) =>
+  // Since `sLogout` will be declared and used in the server environment,
+  // it won't automatically attach the accessToken.
+  sLogout: (
+    body: LogoutBodyType & {
+      accessToken: string
+    }
+  ) =>
     http.post<MessageResType>(
       '/auth/logout',
-      {},
+      {
+        refreshToken: body.refreshToken
+      },
       {
         headers: {
-          Authorization: `Bearer ${sessionToken}`
+          Authorization: `Bearer ${body.accessToken}`
         }
       }
     ),
 
-  logoutFromNextClientToNextServer: (force?: boolean | undefined, signal?: AbortSignal | undefined) =>
-    http.post<MessageResType>(
-      '/api/auth/logout',
-      { force },
-      {
-        baseUrl: '',
-        signal
-      }
-    )
+  // When logging out on the client,
+  // the accessToken (AT) and refreshToken (RT) are automatically sent via cookies
+  // when making a request to the Next.js server (route handler),
+  // so we don't need to manually pass them.
+  logout: () =>
+    http.post<MessageResType>('/api/auth/logout', {
+      baseUrl: ''
+    })
 }
 
 export default authApiRequest
