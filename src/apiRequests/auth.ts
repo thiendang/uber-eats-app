@@ -34,7 +34,7 @@ const authApiRequest = {
   // when making a request to the Next.js server (route handler),
   // so we don't need to manually pass them.
   logout: () =>
-    http.post<MessageResType>('/api/auth/logout', {
+    http.post<MessageResType>('/api/auth/logout', null, {
       baseUrl: ''
     })
 }
