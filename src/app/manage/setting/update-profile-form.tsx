@@ -15,11 +15,13 @@ import { useAccountMe, useUpdateMeMutation } from '@/queries/useAccount'
 import { toast } from '@/components/ui/use-toast'
 import { handleErrorApi } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { useUploadMediaMutation } from '@/queries/useMedia'
 
 export default function UpdateProfileForm() {
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { data, refetch } = useAccountMe()
+  const uploadMutation = useUploadMediaMutation()
   const updateMeMutation = useUpdateMeMutation()
   // const uploadMediaMutation = useUploadMediaMutation()
   const form = useForm<UpdateMeBodyType>({
@@ -78,7 +80,7 @@ export default function UpdateProfileForm() {
       toast({
         description: result.payload.message
       })
-      router.refresh()
+      // router.refresh()
     } catch (error) {
       handleErrorApi({
         error,
