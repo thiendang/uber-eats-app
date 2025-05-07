@@ -15,7 +15,9 @@ export function middleware(request: NextRequest) {
   }
   // Đăng nhập rồi thì sẽ không cho vào login nữa
   if (unAuthPaths.some((path) => pathname.startsWith(path)) && isAuth) {
-    return NextResponse.redirect(new URL('/', request.url))
+    const url = new URL('/logout', request.url)
+    url.searchParams.set('refreshToken', request.cookies.get('refreshToken')?.value ?? '')
+    return NextResponse.redirect(url)
   }
   return NextResponse.next()
 }

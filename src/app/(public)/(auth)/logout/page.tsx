@@ -1,15 +1,19 @@
 import { toast } from '@/components/ui/use-toast'
+import { getRefreshTokenFromLocalStorage } from '@/lib/utils'
 import { useLogoutMutation } from '@/queries/useAuth'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 
 const LogoutPage = () => {
   const { mutateAsync } = useLogoutMutation()
+  const searchParams = useSearchParams()
+  const refreshTokenFromUrl = searchParams.get('refreshToken')
+  const refreshTokenFromLocalStorage = getRefreshTokenFromLocalStorage()
   const router = useRouter()
   const ref = useRef<any>(null)
 
   useEffect(() => {
-    if (ref.current) return
+    if (ref.current || refreshTokenFromUrl !== refreshTokenFromLocalStorage) return
     ref.current = mutateAsync()
       .then((res) => {
         const messageResult = res.payload.message
@@ -27,7 +31,7 @@ const LogoutPage = () => {
       .finally(() => {
         router.push('/login')
       })
-  }, [mutateAsync, router])
+  }, [mutateAsync, router, refreshTokenFromLocalStorage])
 
   return <div>Logout Page</div>
 }
