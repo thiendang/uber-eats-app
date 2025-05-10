@@ -31,8 +31,9 @@ export function middleware(request: NextRequest) {
   // Since refreshToken handling (e.g., refreshing accessToken) isn't implemented yet,
   // we log the user out if accessToken is missing even though refreshToken exists
   if (privatePaths.some((path) => pathname.startsWith(path)) && !accessToken && refreshToken) {
-    const url = new URL('/logout', request.url)
-    url.searchParams.set('refreshToken', refreshToken ?? '')
+    const url = new URL('/refresh-token', request.url)
+    url.searchParams.set('refreshToken', refreshToken)
+    url.searchParams.set('redirect', pathname)
     return NextResponse.redirect(url)
   }
 
