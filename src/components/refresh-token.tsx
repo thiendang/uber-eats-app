@@ -7,16 +7,18 @@ import {
   setAccessTokenToLocalStorage,
   setRefreshTokenToLocalStorage
 } from '@/lib/utils'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import jwt from 'jsonwebtoken'
 import authApiRequest from '@/apiRequests/auth'
+import { toast } from '@/components/ui/use-toast'
 
 // These paths do NOT require refresh token behavior
 const UNAUTHENTICATED_PATH = ['/login', '/register', '/refresh-token']
 
 const RefreshToken = () => {
   const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     // If current path is unauthenticated, do nothing
@@ -28,16 +30,32 @@ const RefreshToken = () => {
     checkAndRefreshToken({
       onError: () => {
         clearInterval(interval)
+        toast({
+          description: 'Hết phiên đăng nhập!!'
+        })
+        router.push('/login')
       }
     })
 
     // Then keep checking every 1 second
     const TIMEOUT = 1000
-    interval = setInterval(checkAndRefreshToken, TIMEOUT)
+    interval = setInterval(
+      () =>
+        checkAndRefreshToken({
+          onError: () => {
+            clearInterval(interval)
+            toast({
+              description: 'Hết phiên đăng nhập!!'
+            })
+            router.push('/login')
+          }
+        }),
+      TIMEOUT
+    )
 
     // Cleanup when component unmounts (e.g. when navigating away)
     return () => clearInterval(interval)
-  }, [pathname])
+  }, [pathname, router])
 
   return null
 }
