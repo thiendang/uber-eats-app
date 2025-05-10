@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 import AccountTable from '@/app/manage/accounts/account-table'
+import { Suspense } from 'react'
 
 const Dashboard = () => {
   return (
@@ -13,6 +14,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <AccountTable />
+            <Suspense>
+              <AccountTable />
+            </Suspense>
           </CardContent>
         </Card>
       </div>

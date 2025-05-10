@@ -33,8 +33,7 @@ const menuItems = [
 
 export default function NavItems({ className }: { className?: string }) {
   // Initialize similar to server because the server doesn't know login status, so we assume isAuth is false
-  const accessTokenFromLocalStorage = getAccessTokenFromLocalStorage()
-  const [isAuth, setIsAuth] = useState(false)
+  const [isAuth] = useState(false)
 
   // useEffect(() => {
   //   if (accessTokenFromLocalStorage) {
@@ -43,9 +42,9 @@ export default function NavItems({ className }: { className?: string }) {
   //   setIsAuth(false)
   // }, [accessTokenFromLocalStorage])
 
-  useEffect(() => {
-    setIsAuth(Boolean(getAccessTokenFromLocalStorage()))
-  }, [])
+  // useEffect(() => {
+  //   setIsAuth(Boolean(getAccessTokenFromLocalStorage()))
+  // }, [])
 
   return menuItems.map((item) => {
     if ((item.authRequired === false && isAuth) || (item.authRequired === true && !isAuth)) return null

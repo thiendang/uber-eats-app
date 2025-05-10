@@ -1,12 +1,15 @@
+'use client'
+
 import { toast } from '@/components/ui/use-toast'
 import { getAccessTokenFromLocalStorage, getRefreshTokenFromLocalStorage } from '@/lib/utils'
 import { useLogoutMutation } from '@/queries/useAuth'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 
-const LogoutPage = () => {
+const LogoutLogic = () => {
   const { mutateAsync } = useLogoutMutation()
   const searchParams = useSearchParams()
+
   const refreshTokenFromUrl = searchParams.get('refreshToken')
   const accessTokenFromUrl = searchParams.get('accessToken')
   const refreshTokenFromLocalStorage = getRefreshTokenFromLocalStorage()
@@ -14,7 +17,6 @@ const LogoutPage = () => {
 
   const router = useRouter()
   const ref = useRef<any>(null)
-
   useEffect(() => {
     if (
       ref.current ||
@@ -23,8 +25,10 @@ const LogoutPage = () => {
     ) {
       return
     }
-    ref.current = mutateAsync()
+    ref.current = mutateAsync
+    mutateAsync()
       .then((res) => {
+        // console.log({ res })
         const messageResult = res.payload.message
         setTimeout(() => {
           ref.current = null
@@ -32,17 +36,29 @@ const LogoutPage = () => {
         toast({
           description: messageResult
         })
+        // localStorage.removeItem('accessToken')
+        // localStorage.removeItem('refreshToken')
         router.push('/login')
+        // router.refresh()
       })
       .catch((err) => {
         console.log('error', err)
       })
-      .finally(() => {
-        router.push('/login')
-      })
-  }, [mutateAsync, router, refreshTokenFromLocalStorage, accessTokenFromUrl])
+      .finally(() => {})
+  }, [mutateAsync, router, refreshTokenFromUrl, accessTokenFromUrl])
+  return (
+    <Suspense>
+      <div>Log out...</div>
+    </Suspense>
+  )
+}
 
-  return <div>Logout Page</div>
+const LogoutPage = () => {
+  return (
+    <Suspense>
+      <LogoutLogic />
+    </Suspense>
+  )
 }
 
 export default LogoutPage

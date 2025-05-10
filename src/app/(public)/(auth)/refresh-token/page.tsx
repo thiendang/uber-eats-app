@@ -4,9 +4,9 @@ import { toast } from '@/components/ui/use-toast'
 import { checkAndRefreshToken, getAccessTokenFromLocalStorage, getRefreshTokenFromLocalStorage } from '@/lib/utils'
 import { useLogoutMutation } from '@/queries/useAuth'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 
-const RefreshTokenPage = () => {
+const RefreshTokenLogic = () => {
   // ** Search params
   const searchParams = useSearchParams()
 
@@ -28,10 +28,20 @@ const RefreshTokenPage = () => {
         }
       })
       // After refreshToken success then redirect user to home page
+    } else {
+      router.push('/')
     }
   }, [router, refreshTokenFromUrl, redirectPathname])
 
   return <div>Refresh token...</div>
 }
 
-export default RefreshTokenPage
+const RefreshTokenPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RefreshTokenLogic />
+    </Suspense>
+  )
+}
+
+export default RefreshTokenLogic

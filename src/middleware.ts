@@ -17,7 +17,10 @@ export function middleware(request: NextRequest) {
   // At this stage, we only check for the existence of refreshToken to determine login status.
   // If refreshToken is missing, the user is considered not logged in.
   if (privatePaths.some((path) => pathname.startsWith(path)) && !refreshToken) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const url = new URL('/login', request.url)
+    url.searchParams.set('clearTokens', 'true')
+    // const clearTokens = removeTokensFromLocalStorage()
+    return NextResponse.redirect(url)
   }
 
   // If the user is already logged in, prevent access to login page
