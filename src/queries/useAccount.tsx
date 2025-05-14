@@ -39,10 +39,11 @@ export const useGetListAccountQuery = () => {
 }
 
 // Get detail employee
-export const useGetEmployeeQuery = ({ id }: { id: number }) => {
+export const useGetEmployeeQuery = ({ id, enabled }: { id: number; enabled: boolean }) => {
   return useQuery({
     queryKey: ['employee-account', id],
-    queryFn: () => accountApiRequest.getEmployeeDetail(id)
+    queryFn: () => accountApiRequest.getEmployeeDetail(id),
+    enabled
   })
 }
 
@@ -61,8 +62,8 @@ export const useAddEmployeeMutation = () => {
 export const useUpdateEmployeeMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ employeeId, body }: { employeeId: number; body: UpdateEmployeeAccountBodyType }) =>
-      accountApiRequest.updateEmployee(employeeId, body),
+    mutationFn: ({ id, ...body }: UpdateEmployeeAccountBodyType & { id: number }) =>
+      accountApiRequest.updateEmployee(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['account-list'] })
     }

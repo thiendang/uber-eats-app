@@ -13,13 +13,16 @@ import { Label } from '@/components/ui/label'
 import { UpdateEmployeeAccountBody, UpdateEmployeeAccountBodyType } from '@/schemaValidations/account.schema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Upload } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Switch } from '@/components/ui/switch'
 import envConfig from '@/config'
-import { useGetEmployeeQuery } from '@/queries/useAccount'
+import { useGetEmployeeQuery, useUpdateEmployeeMutation } from '@/queries/useAccount'
+import { useUploadMediaMutation } from '@/queries/useMedia'
+import { handleErrorApi } from '@/lib/utils'
+import { toast } from '@/components/ui/use-toast'
 
 const EditEmployee = ({
   id,
@@ -32,8 +35,11 @@ const EditEmployee = ({
 }) => {
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
-  
-  const { data: employeeInfoDetail } = useGetEmployeeQuery({ id: id as number })
+
+  const { data } = useGetEmployeeQuery({ id: id as number, enabled: Boolean(id) })
+  const uploadMutation = useUploadMediaMutation()
+  const updateEmployeeMutation = useUpdateEmployeeMutation()
+
   const form = useForm<UpdateEmployeeAccountBodyType>({
     resolver: zodResolver(UpdateEmployeeAccountBody),
     defaultValues: {
@@ -55,6 +61,52 @@ const EditEmployee = ({
     return avatar
   }, [file, avatar])
 
+  useEffect(() => {
+    if (data) {
+      const { name, avatar, email } = data.payload.data
+      form.reset({
+        name,
+        email,
+        avatar: avatar ?? undefined,
+        changePassword: form.getValues('changePassword'),
+        password: form.getValues('password'),
+        confirmPassword: form.getValues('confirmPassword')
+      })
+    }
+  }, [data, form])
+
+  const handleSubmitForm = async (values: UpdateEmployeeAccountBodyType) => {
+    if (updateEmployeeMutation.isPending) return
+    try {
+      let body: UpdateEmployeeAccountBodyType & { id: number } = { id: id as number, ...values }
+      if (file) {
+        
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const uploadImageResult = await uploadMutation.mutateAsync(formData)
+        const imageUrl = uploadImageResult.payload.data
+        
+        body = {
+          avatar: imageUrl,
+          ...body
+        }
+      }
+      const result = await updateEmployeeMutation.mutateAsync(body)
+      toast({
+        description: result.payload.message
+      })
+      onSubmitSuccess && onSubmitSuccess()
+      // setOpen(false)
+      // router.refresh()
+    } catch (error) {
+      handleErrorApi({
+        error,
+        setError: form.setError
+      })
+    }
+  }
+
   return (
     <Dialog
       open={Boolean(id)}
@@ -70,7 +122,14 @@ const EditEmployee = ({
           <DialogDescription>Name, email, password is required</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form noValidate className='grid auto-rows-max items-start gap-4 md:gap-8' id='edit-employee-form'>
+          <form
+            noValidate
+            className='grid auto-rows-max items-start gap-4 md:gap-8'
+            id='edit-employee-form'
+            onSubmit={form.handleSubmit(handleSubmitForm, (error) => {
+              console.log('Checkk error update account employee', error)
+            })}
+          >
             <div className='grid gap-4 py-4'>
               <FormField
                 control={form.control}
