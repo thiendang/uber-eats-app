@@ -19,6 +19,7 @@ import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Switch } from '@/components/ui/switch'
 import envConfig from '@/config'
+import { useGetEmployeeQuery } from '@/queries/useAccount'
 
 const EditEmployee = ({
   id,
@@ -31,6 +32,8 @@ const EditEmployee = ({
 }) => {
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
+  
+  const { data: employeeInfoDetail } = useGetEmployeeQuery({ id: id as number })
   const form = useForm<UpdateEmployeeAccountBodyType>({
     resolver: zodResolver(UpdateEmployeeAccountBody),
     defaultValues: {

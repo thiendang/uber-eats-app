@@ -39,10 +39,10 @@ export const useGetListAccountQuery = () => {
 }
 
 // Get detail employee
-export const useGetEmployeeQuery = ({ employeeId }: { employeeId: number }) => {
+export const useGetEmployeeQuery = ({ id }: { id: number }) => {
   return useQuery({
-    queryKey: ['employee-account', employeeId],
-    queryFn: () => accountApiRequest.getEmployeeDetail(employeeId)
+    queryKey: ['employee-account', id],
+    queryFn: () => accountApiRequest.getEmployeeDetail(id)
   })
 }
 

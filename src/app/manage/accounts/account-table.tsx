@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useSearchParams } from 'next/navigation'
 import AutoPagination from '@/components/auto-pagination'
+import { useGetListAccountQuery } from '@/queries/useAccount'
 
 type AccountItem = AccountListResType['data'][0]
 
@@ -59,6 +60,13 @@ const AccountTableContext = createContext<{
 })
 
 export const columns: ColumnDef<AccountType>[] = [
+  {
+    id: 'stt',
+    header: 'STT',
+    cell: ({ row }) => {
+      return <div>{row.index + 1}</div>
+    }
+  },
   {
     accessorKey: 'id',
     header: 'ID'
@@ -77,7 +85,7 @@ export const columns: ColumnDef<AccountType>[] = [
   },
   {
     accessorKey: 'name',
-    header: 'Name',
+    header: 'Tên',
     cell: ({ row }) => <div className='capitalize'>{row.getValue('name')}</div>
   },
   {
@@ -89,8 +97,8 @@ export const columns: ColumnDef<AccountType>[] = [
           <CaretSortIcon className='ml-2 h-4 w-4' />
         </Button>
       )
-    },
-    cell: ({ row }) => <div className='lowercase'>{row.getValue('email')}</div>
+    }
+    // cell: ({ row }) => <div className='lowercase'>{row.getValue('email')}</div>
   },
   {
     id: 'actions',
@@ -124,6 +132,7 @@ export const columns: ColumnDef<AccountType>[] = [
   }
 ]
 
+// Component hiển thị khung alert để confirm là muốn xoá employee hay không
 function AlertDialogDeleteAccount({
   employeeDelete,
   setEmployeeDelete
@@ -142,11 +151,10 @@ function AlertDialogDeleteAccount({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete employee?</AlertDialogTitle>
+          <AlertDialogTitle>Xóa nhân viên?</AlertDialogTitle>
           <AlertDialogDescription>
-            The account{' '}
-            <span className='rounded bg-foreground px-1 text-primary-foreground'>{employeeDelete?.name}</span> will be
-            permanently deleted
+            Tài khoản <span className='rounded bg-foreground px-1 text-primary-foreground'>{employeeDelete?.name}</span>{' '}
+            sẽ bị xóa vĩnh viễn
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -157,16 +165,16 @@ function AlertDialogDeleteAccount({
     </AlertDialog>
   )
 }
-
+// Số lượng item trên 1 trang
 const PAGE_SIZE = 10
 const AccountTable = () => {
   const searchParam = useSearchParams()
   const page = searchParam.get('page') ? Number(searchParam.get('page')) : 1
   const pageIndex = page - 1
   // const params = Object.fromEntries(searchParam.entries())
+  //  State cho Edit Actions, Delete Actions
   const [employeeIdEdit, setEmployeeIdEdit] = useState<number | undefined>()
   const [employeeDelete, setEmployeeDelete] = useState<AccountItem | null>(null)
-  const data: any[] = []
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -175,6 +183,13 @@ const AccountTable = () => {
     pageIndex,
     pageSize: PAGE_SIZE //default page size
   })
+
+  // Get List employee query
+  const { data: accountListQuery } = useGetListAccountQuery()
+  console.log('Checkk account list', accountListQuery)
+
+  // Data table
+  const data: AccountItem[] = accountListQuery?.payload?.data ?? []
 
   const table = useReactTable({
     data,
@@ -206,6 +221,8 @@ const AccountTable = () => {
   }, [table, pageIndex])
 
   return (
+    // <Suspense fallback={<div>Loading...</div>}>
+    // </Suspense>
     <AccountTableContext.Provider value={{ employeeIdEdit, setEmployeeIdEdit, employeeDelete, setEmployeeDelete }}>
       <div className='w-full'>
         <EditEmployee id={employeeIdEdit} setId={setEmployeeIdEdit} onSubmitSuccess={() => {}} />
@@ -257,8 +274,8 @@ const AccountTable = () => {
         </div>
         <div className='flex items-center justify-end space-x-2 py-4'>
           <div className='flex-1 py-4 text-xs text-muted-foreground'>
-            Showing <strong>{table.getPaginationRowModel().rows.length}</strong> in <strong>{data.length}</strong>{' '}
-            results
+            Hiển thị <strong>{table.getPaginationRowModel().rows.length}</strong> trong <strong>{data.length}</strong>{' '}
+            kết quả
           </div>
           <div>
             <Suspense fallback={<div>Loading...</div>}>
