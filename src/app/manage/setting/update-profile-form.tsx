@@ -9,21 +9,20 @@ import { UpdateMeBody, UpdateMeBodyType } from '@/schemaValidations/account.sche
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useUploadMediaMutation } from '@/queries/useMedia'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAccountMe, useUpdateMeMutation } from '@/queries/useAccount'
-// import { useUploadMediaMutation } from '@/queries/useMedia'
-import { toast } from '@/components/ui/use-toast'
 import { handleErrorApi } from '@/lib/utils'
+import { toast } from '@/components/ui/use-toast'
 import { useRouter } from 'next/navigation'
-import { useUploadMediaMutation } from '@/queries/useMedia'
 
-export default function UpdateProfileForm() {
+const UpdateProfileForm = () => {
   const [file, setFile] = useState<File | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
-  const { data, refetch } = useAccountMe()
+
+  const { data } = useAccountMe()
   const uploadMutation = useUploadMediaMutation()
   const updateMeMutation = useUpdateMeMutation()
-  // const uploadMediaMutation = useUploadMediaMutation()
   const form = useForm<UpdateMeBodyType>({
     resolver: zodResolver(UpdateMeBody),
     defaultValues: {
@@ -36,23 +35,24 @@ export default function UpdateProfileForm() {
 
   const avatar = form.watch('avatar')
   const name = form.watch('name')
-  // useEffect(() => {
-  //   if (data) {
-  //     const { name, avatar } = data.payload.data
-  //     form.reset({
-  //       name,
-  //       avatar: avatar ?? undefined
-  //     })
-  //   }
-  // }, [form, data])
-  // Nếu các bạn dùng Next.js 15 (tức React 19) thì không cần dùng useMemo chỗ này
-  // const previewAvatar = file ? URL.createObjectURL(file) : avatar
+
   const previewAvatar = useMemo(() => {
     if (file) {
       return URL.createObjectURL(file)
     }
+    
     return avatar
-  }, [avatar, file])
+  }, [file, avatar])
+
+  useEffect(() => {
+    if (data) {
+      const { name, avatar } = data?.payload.data
+      form.reset({
+        name,
+        avatar: avatar ?? undefined
+      })
+    }
+  }, [data, form])
 
   const handleResetProfile = () => {
     form.reset()
@@ -64,13 +64,13 @@ export default function UpdateProfileForm() {
     try {
       let bodySubmit = values
       if (file) {
-        // Chúng ta chi dùng cái file này để mà chúng ta upload lên thôi
+        
         const formData = new FormData()
         formData.append('file', file)
         // CallAPi upload ảnh
         const uploadImageResult = await uploadMutation.mutateAsync(formData)
         const imageUrl = uploadImageResult.payload.data
-        // Nếu mà có file thì gán lại như này
+        
         bodySubmit = {
           ...values,
           avatar: imageUrl
@@ -89,34 +89,6 @@ export default function UpdateProfileForm() {
     }
   }
 
-  const onSubmit = async (values: UpdateMeBodyType) => {
-    //   if (updateMeMutation.isPending) return
-    //   try {
-    //     let body = values
-    //     if (file) {
-    //       const formData = new FormData()
-    //       formData.append('file', file)
-    //       const uploadImageResult = await uploadMediaMutation.mutateAsync(
-    //         formData
-    //       )
-    //       const imageUrl = uploadImageResult.payload.data
-    //       body = {
-    //         ...values,
-    //         avatar: imageUrl
-    //       }
-    //     }
-    //     const result = await updateMeMutation.mutateAsync(body)
-    //     toast({
-    //       description: result.payload.message
-    //     })
-    //     refetch()
-    //   } catch (error) {
-    //     handleErrorApi({
-    //       error,
-    //       setError: form.setError
-    //     })
-    //   }
-  }
   return (
     <Form {...form}>
       <form
@@ -145,13 +117,16 @@ export default function UpdateProfileForm() {
                       </Avatar>
                       <input
                         type='file'
+                        ref={avatarInputRef}
                         accept='image/*'
                         className='hidden'
-                        ref={avatarInputRef}
                         onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
                             setFile(file)
+                            // Mục đích là khi mà chúng ta onChange thì cái avatar nó là một cái URL để mà nó vượt qua được cái validate của thằng zod
+                            // Bởi vì thằng server nó chỉ chịu là đường dẫn URL nên chúng ta cần phải làm vậy
+                            // Vì chúng ta chỉ sử dụng giá trị là `file` upload ảnh lên đâu có liên quan gì tới thằng localhost:3000/name này cũng chúng ta, thường thì chúng ta sẽ hay fake chỗ này
                             field.onChange('http://localhost:3000/' + field.name)
                           }
                         }}
@@ -159,7 +134,7 @@ export default function UpdateProfileForm() {
                       <button
                         className='flex aspect-square w-[100px] items-center justify-center rounded-md border border-dashed'
                         type='button'
-                        onClick={() => avatarInputRef.current?.click()}
+                        onClick={() => avatarInputRef?.current?.click()}
                       >
                         <Upload className='h-4 w-4 text-muted-foreground' />
                         <span className='sr-only'>Upload</span>
@@ -198,3 +173,5 @@ export default function UpdateProfileForm() {
     </Form>
   )
 }
+
+export default UpdateProfileForm
