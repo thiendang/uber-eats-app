@@ -80,22 +80,23 @@ const EditEmployee = ({
     try {
       let body: UpdateEmployeeAccountBodyType & { id: number } = { id: id as number, ...values }
       if (file) {
-        
         const formData = new FormData()
         formData.append('file', file)
-        
+
         const uploadImageResult = await uploadMutation.mutateAsync(formData)
         const imageUrl = uploadImageResult.payload.data
-        
+
         body = {
-          avatar: imageUrl,
-          ...body
+          ...body,
+          avatar: imageUrl
         }
       }
       const result = await updateEmployeeMutation.mutateAsync(body)
       toast({
         description: result.payload.message
       })
+      setFile(null)
+      setId(undefined)
       onSubmitSuccess && onSubmitSuccess()
       // setOpen(false)
       // router.refresh()
@@ -107,12 +108,17 @@ const EditEmployee = ({
     }
   }
 
+  const reset = () => {
+    setFile(null)
+    setId(undefined)
+  }
+
   return (
     <Dialog
       open={Boolean(id)}
       onOpenChange={(value) => {
         if (!value) {
-          setId(undefined)
+          reset()
         }
       }}
     >
