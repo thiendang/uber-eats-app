@@ -1,5 +1,6 @@
 'use client'
 
+import { useAppContext } from '@/components/app-provider'
 import { toast } from '@/components/ui/use-toast'
 import { getAccessTokenFromLocalStorage, getRefreshTokenFromLocalStorage } from '@/lib/utils'
 import { useLogoutMutation } from '@/queries/useAuth'
@@ -9,6 +10,7 @@ import { Suspense, useEffect, useRef } from 'react'
 const LogoutLogic = () => {
   const { mutateAsync } = useLogoutMutation()
   const searchParams = useSearchParams()
+  const { setIsAuth } = useAppContext()
 
   const refreshTokenFromUrl = searchParams.get('refreshToken')
   const accessTokenFromUrl = searchParams.get('accessToken')
@@ -29,12 +31,17 @@ const LogoutLogic = () => {
         .then((res) => {
           // console.log({ res })
           const messageResult = res.payload.message
+
           setTimeout(() => {
             ref.current = null
           }, 1000)
+
           toast({
             description: messageResult
           })
+
+          setIsAuth(false)
+          
           // localStorage.removeItem('accessToken')
           // localStorage.removeItem('refreshToken')
           router.push('/login')
@@ -48,7 +55,7 @@ const LogoutLogic = () => {
       router.push('/')
     }
   }, [mutateAsync, router, refreshTokenFromUrl, accessTokenFromUrl])
-  
+
   return (
     <Suspense>
       <div>Log out...</div>
