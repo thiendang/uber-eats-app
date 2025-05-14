@@ -17,35 +17,38 @@ const LogoutLogic = () => {
 
   const router = useRouter()
   const ref = useRef<any>(null)
+
   useEffect(() => {
     if (
-      ref.current ||
-      (refreshTokenFromUrl && refreshTokenFromUrl !== refreshTokenFromLocalStorage) ||
-      (accessTokenFromUrl && accessTokenFromUrl !== accessTokenFromLocalStorage)
+      !ref.current &&
+      ((refreshTokenFromUrl && refreshTokenFromUrl !== refreshTokenFromLocalStorage) ||
+        (accessTokenFromUrl && accessTokenFromUrl !== accessTokenFromLocalStorage))
     ) {
-      return
-    }
-    ref.current = mutateAsync
-    mutateAsync()
-      .then((res) => {
-        // console.log({ res })
-        const messageResult = res.payload.message
-        setTimeout(() => {
-          ref.current = null
-        }, 1000)
-        toast({
-          description: messageResult
+      ref.current = mutateAsync
+      mutateAsync()
+        .then((res) => {
+          // console.log({ res })
+          const messageResult = res.payload.message
+          setTimeout(() => {
+            ref.current = null
+          }, 1000)
+          toast({
+            description: messageResult
+          })
+          // localStorage.removeItem('accessToken')
+          // localStorage.removeItem('refreshToken')
+          router.push('/login')
+          // router.refresh()
         })
-        // localStorage.removeItem('accessToken')
-        // localStorage.removeItem('refreshToken')
-        router.push('/login')
-        // router.refresh()
-      })
-      .catch((err) => {
-        console.log('error', err)
-      })
-      .finally(() => {})
+        .catch((err) => {
+          console.log('error', err)
+        })
+        .finally(() => {})
+    } else {
+      router.push('/')
+    }
   }, [mutateAsync, router, refreshTokenFromUrl, accessTokenFromUrl])
+  
   return (
     <Suspense>
       <div>Log out...</div>
