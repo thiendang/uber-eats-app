@@ -13,8 +13,7 @@ const Dashboard = () => {
             <CardDescription>Employee account management</CardDescription>
           </CardHeader>
           <CardContent>
-            <AccountTable />
-            <Suspense>
+            <Suspense fallback={<div>Loading...</div>}>
               <AccountTable />
             </Suspense>
           </CardContent>

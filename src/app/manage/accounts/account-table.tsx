@@ -30,7 +30,7 @@ import { AccountListResType, AccountType } from '@/schemaValidations/account.sch
 import AddEmployee from '@/app/manage/accounts/add-employee'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import EditEmployee from '@/app/manage/accounts/edit-employee'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, Suspense, useContext, useEffect, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -261,11 +261,13 @@ const AccountTable = () => {
             results
           </div>
           <div>
-            <AutoPagination
-              page={table.getState().pagination.pageIndex + 1}
-              pageSize={table.getPageCount()}
-              pathname='/manage/accounts'
-            />
+            <Suspense fallback={<div>Loading...</div>}>
+              <AutoPagination
+                page={table.getState().pagination.pageIndex + 1}
+                pageSize={table.getPageCount()}
+                pathname='/manage/accounts'
+              />
+            </Suspense>
           </div>
         </div>
       </div>
