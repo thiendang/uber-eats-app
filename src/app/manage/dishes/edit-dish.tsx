@@ -1,5 +1,4 @@
 'use client'
-
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,6 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UpdateDishBody, UpdateDishBodyType } from '@/schemaValidations/dish.schema'
 import { DishStatus, DishStatusValues } from '@/constants/type'
 import { Textarea } from '@/components/ui/textarea'
+import { useUploadMediaMutation } from '@/queries/useMedia'
+import { useGetDishQuery, useUpdateDishMutation } from '@/queries/useDish'
 
 const EditDish = ({
   id,
@@ -36,29 +37,87 @@ const EditDish = ({
   const [file, setFile] = useState<File | null>(null)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
 
+  // **  React Query
+  const uploadMediaMutation = useUploadMediaMutation()
+  const updateDishMutation = useUpdateDishMutation()
+  const { data } = useGetDishQuery({ enabled: Boolean(id), id: id as number })
+
   const form = useForm<UpdateDishBodyType>({
     resolver: zodResolver(UpdateDishBody),
     defaultValues: {
       name: '',
       description: '',
       price: 0,
-      image: '',
+      image: undefined,
       status: DishStatus.Unavailable
     }
   })
-
   const image = form.watch('image')
   const name = form.watch('name')
-
   const previewAvatarFromFile = useMemo(() => {
-    return file ? URL.createObjectURL(file) : image
+    if (file) {
+      return URL.createObjectURL(file)
+    }
+    return image
   }, [file, image])
+
+  useEffect(() => {
+    if (data) {
+      const { name, image, description, price, status } = data.payload.data
+      form.reset({
+        name,
+        image: image ?? undefined,
+        description,
+        price,
+        status
+      })
+    }
+  }, [data, form])
+
+  const handleSubmitForm = async (values: UpdateDishBodyType) => {
+    if (updateDishMutation.isPending) return
+    try {
+      let body: UpdateDishBodyType & { id: number } = {
+        id: id as number,
+        ...values
+      }
+      if (file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        const uploadImageResult = await uploadMediaMutation.mutateAsync(formData)
+        const imageUrl = uploadImageResult.payload.data
+        body = {
+          ...body,
+          image: imageUrl
+        }
+      }
+      const result = await updateDishMutation.mutateAsync(body)
+      toast({
+        description: result.payload.message
+      })
+      reset()
+      onSubmitSuccess && onSubmitSuccess()
+    } catch (error) {
+      handleErrorApi({
+        error,
+        setError: form.setError
+      })
+    }
+  }
+
+  const reset = () => {
+    setId(undefined)
+    setFile(null)
+  }
 
   return (
     <Dialog
       open={Boolean(id)}
       onOpenChange={(value) => {
-        if (!value) setId(undefined)
+        // value là giá trị boolean, nếu là true thì đã là bật cái dialog lên rồi
+        if (!value) {
+          reset()
+        }
       }}
     >
       <DialogContent className='max-h-screen overflow-auto sm:max-w-[600px]'>
@@ -66,17 +125,23 @@ const EditDish = ({
           <DialogTitle>Edit Dish</DialogTitle>
           <DialogDescription>The following fields are required: name, image</DialogDescription>
         </DialogHeader>
-
         <Form {...form}>
-          <form noValidate className='grid auto-rows-max items-start gap-4 md:gap-8' id='edit-dish-form'>
+          <form
+            noValidate
+            className='grid auto-rows-max items-start gap-4 md:gap-8'
+            id='edit-dish-form'
+            onSubmit={form.handleSubmit(handleSubmitForm, (error) => {
+              console.log('Checkk error submit form', error)
+            })}
+            onReset={reset}
+          >
             <div className='grid gap-4 py-4'>
-              {/* Image field */}
               <FormField
                 control={form.control}
                 name='image'
                 render={({ field }) => (
                   <FormItem>
-                    <div className='flex items-start gap-2'>
+                    <div className='flex items-start justify-start gap-2'>
                       <Avatar className='aspect-square h-[100px] w-[100px] rounded-md object-cover'>
                         <AvatarImage src={previewAvatarFromFile} />
                         <AvatarFallback className='rounded-none'>{name || 'Avatar'}</AvatarFallback>
@@ -107,90 +172,85 @@ const EditDish = ({
                 )}
               />
 
-              {/* Name field */}
               <FormField
                 control={form.control}
                 name='name'
                 render={({ field }) => (
                   <FormItem>
-                    <div className='grid grid-cols-4 items-center gap-4'>
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <Label htmlFor='name'>Dish Name</Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        <Input id='name' {...field} />
+                        <Input id='name' className='w-full' {...field} />
                         <FormMessage />
                       </div>
                     </div>
                   </FormItem>
                 )}
               />
-
-              {/* Price field */}
               <FormField
                 control={form.control}
                 name='price'
                 render={({ field }) => (
                   <FormItem>
-                    <div className='grid grid-cols-4 items-center gap-4'>
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <Label htmlFor='price'>Price</Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        <Input id='price' type='number' {...field} />
+                        <Input id='price' className='w-full' {...field} type='number' />
                         <FormMessage />
                       </div>
                     </div>
                   </FormItem>
                 )}
               />
-
-              {/* Description field */}
               <FormField
                 control={form.control}
                 name='description'
                 render={({ field }) => (
                   <FormItem>
-                    <div className='grid grid-cols-4 items-center gap-4'>
+                    <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
                       <Label htmlFor='description'>Description</Label>
                       <div className='col-span-3 w-full space-y-2'>
-                        <Textarea id='description' {...field} />
+                        <Textarea id='description' className='w-full' {...field} />
                         <FormMessage />
                       </div>
                     </div>
                   </FormItem>
                 )}
               />
-
-              {/* Status field */}
               <FormField
                 control={form.control}
                 name='status'
-                render={({ field }) => (
-                  <FormItem>
-                    <div className='grid grid-cols-4 items-center gap-4'>
-                      <Label htmlFor='status'>Status</Label>
-                      <div className='col-span-3 w-full space-y-2'>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder='Select status' />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DishStatusValues.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {getVietnameseDishStatus(status)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <div className='grid grid-cols-4 items-center justify-items-start gap-4'>
+                        <Label htmlFor='description'>Status</Label>
+                        <div className='col-span-3 w-full space-y-2'>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder='Select status' />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {DishStatusValues.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {getVietnameseDishStatus(status)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
                         <FormMessage />
                       </div>
-                    </div>
-                  </FormItem>
-                )}
+                    </FormItem>
+                  )
+                }}
               />
             </div>
           </form>
         </Form>
-
         <DialogFooter>
           <Button type='submit' form='edit-dish-form'>
             Save
